@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Central Samuel — Lista WhatsApp</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;background:#f5f7fb;color:#152033}.wrap{max-width:980px;margin:auto;padding:20px}h1{font-size:24px;margin:0 0 6px}.summary{color:#556070;margin-bottom:10px;line-height:1.45}.status{font-size:13px;margin:8px 0 14px;color:#526071}.status.ok{color:#137333}.status.err{color:#b3261e}.search{position:sticky;top:0;background:#f5f7fb;padding:10px 0 14px;z-index:2}input{width:100%;padding:14px 16px;border:1px solid #cfd6e4;border-radius:10px;font-size:16px}.card{background:#fff;border:1px solid #e2e7f0;border-radius:12px;padding:14px 16px;margin:9px 0;display:flex;align-items:center;justify-content:space-between;gap:14px}.name{font-weight:700;font-size:15px}.number{margin-top:5px;color:#526071;font-size:14px}.btn{text-decoration:none;background:#128c7e;color:#fff;padding:11px 14px;border-radius:9px;font-weight:700;white-space:nowrap;display:block;text-align:center}.card.sent{background:#ffe3e3;border-color:#d93025}.card.sent .name,.card.sent .number{color:#9b1c1c}.card.sent .btn{background:#d93025}.card.sent::before{content:"✓ MENSAGEM ENVIADA";font-size:11px;font-weight:800;color:#b3261e}.hidden{display:none}.count{font-weight:700;color:#128c7e}.loading{padding:30px;text-align:center;color:#556070}@media(max-width:620px){.card{align-items:stretch;flex-direction:column}.btn{text-align:center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Lista de contatos para WhatsApp</h1>
+<div class="summary"><span class="count" id="count">Carregando...</span><br/>O status de contato agora é compartilhado entre os aparelhos. Ao tocar em <b>Abrir WhatsApp</b>, o contato fica vermelho para toda a equipe.</div>
+<div class="status" id="syncStatus">Carregando lista e sincronização...</div>
+<div class="search"><input id="q" placeholder="Buscar por nome ou número..." type="search" /></div>
+<div id="list"><div class="loading">Carregando contatos...</div></div>
+</div>
+<script>
+const REST_BASE='https://wsqcjbbaqxsjvxvvlgxv.supabase.co/rest/v1';
+const API_KEY='sb_publishable_81ikpTrCLUMeJFlJjn_x1w_3p4DGrBj';
+const SENT_KEY='samuel_whatsapp_sent_v1';
+const SCROLL_KEY='samuel_whatsapp_scroll_v1';
+let sharedSent=new Set();
+let syncing=false;
+function headers(extra={}){return Object.assign({'apikey':API_KEY,'Authorization':'Bearer '+API_KEY,'Content-Type':'application/json'},extra)}
+function loadLocal(){try{return new Set(JSON.parse(localStorage.getItem(SENT_KEY)||'[]'))}catch(e){return new Set()}}
+function saveLocal(set){try{localStorage.setItem(SENT_KEY,JSON.stringify([...set]))}catch(e){}}
+function applySent(card){if(!card)return;card.classList.add('sent');const btn=card.querySelector('.btn');if(btn)btn.textContent='✓ JÁ CONTATADO'}
+function updateCounter(){const cards=[...document.querySelectorAll('.card[data-wa]')];const remaining=cards.filter(c=>!c.classList.contains('sent')).length;document.getElementById('count').textContent=remaining.toLocaleString('pt-BR')+' contatos restantes na lista.'}
+function setStatus(msg,kind=''){const el=document.getElementById('syncStatus');el.textContent=msg;el.className='status '+kind}
+async function fetchAllSent(){const out=[];const step=1000;for(let start=0;;start+=step){const r=await fetch(`${REST_BASE}/whatsapp_contact_status?select=contact_key&is_sent=eq.true&order=contact_key`,{headers:headers({'Range':`${start}-${start+step-1}`})});if(!r.ok)throw new Error('Falha ao ler status: '+r.status);const rows=await r.json();out.push(...rows);if(rows.length<step)break}return new Set(out.map(x=>String(x.contact_key)))}
+async function upsertKeys(keys){if(!keys.length)return;for(let i=0;i<keys.length;i+=100){const now=new Date().toISOString();const payload=keys.slice(i,i+100).map(k=>({contact_key:String(k),is_sent:true,sent_at:now,updated_at:now}));const r=await fetch(`${REST_BASE}/whatsapp_contact_status`,{method:'POST',headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(payload)});if(!r.ok)throw new Error('Falha ao salvar status: '+r.status)}}
+async function migrateLocal(){const local=loadLocal();if(local.size)await upsertKeys([...local])}
+async function syncFromCloud(show=true){if(syncing)return;syncing=true;try{const cloud=await fetchAllSent();sharedSent=cloud;const local=loadLocal();cloud.forEach(k=>local.add(k));saveLocal(local);document.querySelectorAll('.card[data-wa]').forEach(card=>{if(cloud.has(card.dataset.wa)||local.has(card.dataset.wa))applySent(card)});updateCounter();if(show)setStatus('✓ Sincronizado com a equipe','ok')}catch(e){console.error(e);if(show)setStatus('Sem sincronização no momento. A lista continua funcionando neste aparelho.','err')}finally{syncing=false}}
+async function markAndOpen(link){const card=link.closest('.card');if(!card)return true;const key=card.dataset.wa;applySent(card);const local=loadLocal();local.add(key);saveLocal(local);sharedSent.add(key);updateCounter();try{await upsertKeys([key]);setStatus('✓ Contato salvo para toda a equipe','ok')}catch(e){console.error(e);setStatus('Contato marcado neste aparelho; tentando sincronizar novamente...','err')}return true}
+function filterList(){const q=(document.getElementById('q').value||'').trim().toLowerCase();document.querySelectorAll('.card[data-search]').forEach(card=>card.classList.toggle('hidden',!!q&&!card.dataset.search.includes(q)))}
+async function loadContacts(){const r=await fetch('index.html?source=1',{cache:'no-store'});if(!r.ok)throw new Error('Falha ao carregar a lista');const html=await r.text();const doc=new DOMParser().parseFromString(html,'text/html');const oldList=doc.querySelector('#list');if(!oldList)throw new Error('Lista original não encontrada');const list=document.getElementById('list');list.innerHTML=oldList.innerHTML;list.querySelectorAll('.btn').forEach(btn=>{btn.removeAttribute('onclick');btn.addEventListener('click',()=>{markAndOpen(btn)})});const local=loadLocal();list.querySelectorAll('.card[data-wa]').forEach(card=>{if(local.has(card.dataset.wa))applySent(card)});updateCounter()}
+async function start(){try{await loadContacts();document.getElementById('q').addEventListener('input',filterList);setStatus('Lista carregada. Sincronizando...');try{await migrateLocal()}catch(e){console.error(e)}await syncFromCloud(true);let y=0;try{y=parseInt(localStorage.getItem(SCROLL_KEY)||'0',10)}catch(e){}if(Number.isFinite(y)&&y>0)setTimeout(()=>window.scrollTo(0,y),100);setInterval(()=>syncFromCloud(false),15000)}catch(e){console.error(e);setStatus('Erro ao carregar a lista. Atualize a página.','err');document.getElementById('list').innerHTML='<div class="loading">Não foi possível carregar os contatos.</div>'}}
+let scrollTimer;window.addEventListener('scroll',()=>{clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{try{localStorage.setItem(SCROLL_KEY,String(window.scrollY||0))}catch(e){}},150)},{passive:true});window.addEventListener('pageshow',()=>syncFromCloud(false));document.addEventListener('DOMContentLoaded',start);
+</script>
+</body>
+</html>
