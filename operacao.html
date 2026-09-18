@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Central Samuel — Operação de Contatos</title>
+<style>
+:root{--navy:#0d1b4c;--blue:#0b63f6;--green:#128c7e;--gold:#ffc72c;--bg:#f4f6fb;--card:#fff;--ink:#152033;--muted:#667085;--line:#e3e8f2;--danger:#b3261e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,Arial,sans-serif}.app{max-width:1180px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:16px}.brand h1{font-size:23px;margin:0;color:var(--navy)}.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}.pill{background:#eef3ff;color:var(--navy);padding:8px 11px;border-radius:999px;font-weight:800;font-size:12px}.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 3px 14px rgba(13,27,76,.05)}.card h2{font-size:15px;margin:0 0 12px;color:var(--navy)}label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin:12px 0 7px}.message{width:100%;min-height:150px;resize:vertical;border:1px solid #cfd7e6;border-radius:13px;padding:13px;font:15px/1.45 Arial,sans-serif;outline:none}.message:focus,input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(11,99,246,.1)}.row{display:flex;gap:10px}.field{flex:1}select,input{width:100%;padding:12px;border:1px solid #cfd7e6;border-radius:11px;background:#fff;font-size:14px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:11px;padding:12px 14px;font-weight:800;cursor:pointer;background:var(--navy);color:#fff}.btn.green{background:var(--green)}.btn.light{background:#eef2f8;color:var(--navy)}.btn.danger{background:#fff1f0;color:var(--danger)}.btn:disabled{opacity:.45;cursor:not-allowed}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.stat{background:#f7f9fc;border:1px solid var(--line);border-radius:13px;padding:11px}.stat b{display:block;font-size:20px;color:var(--navy)}.stat span{font-size:11px;color:var(--muted)}.progress{height:8px;background:#edf0f5;border-radius:999px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;background:var(--green);width:0}.next{border:1px solid var(--line);border-radius:15px;padding:15px;margin-top:12px}.next .name{font-size:18px;font-weight:900;color:var(--navy)}.next .phone{color:var(--muted);margin-top:5px}.empty{padding:22px;text-align:center;color:var(--muted)}.timer{background:#fff8df;border:1px solid #f5df87;border-radius:13px;padding:12px;margin-top:12px}.timer strong{color:var(--navy)}.status{font-size:12px;color:var(--muted);margin-top:10px}.status.ok{color:#137333}.status.err{color:var(--danger)}.search{margin-top:12px}.mini-list{max-height:260px;overflow:auto;margin-top:10px}.mini{display:flex;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:13px}.sent{color:var(--danger);font-weight:800}.sticky-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:10px}
+@media(max-width:760px){.app{padding:12px}.top{align-items:flex-start}.grid{grid-template-columns:1fr}.card{padding:15px;border-radius:15px}.row{flex-direction:column}.actions .btn{flex:1;min-width:130px}.stats{grid-template-columns:repeat(3,1fr)}.brand h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="brand"><h1>Central Samuel</h1><p>Operação de contatos · progresso compartilhado</p></div><div class="pill" id="cloudPill">Conectando…</div></header>
+  <main class="grid">
+    <section class="card">
+      <h2>Mensagem deste lote</h2>
+      <textarea id="message" class="message" placeholder="Digite ou cole aqui a mensagem que será preparada para este lote. Você pode alterá-la a qualquer momento."></textarea>
+      <div class="row">
+        <div class="field"><label>Tamanho do lote</label><select id="batchSize"><option value="10">10 contatos</option><option value="12">12 contatos</option></select></div>
+        <div class="field"><label>Próxima revisão</label><input id="nextTime" type="time"></div>
+      </div>
+      <div class="actions"><button class="btn" id="prepare">Preparar lote</button><button class="btn light" id="saveDraft">Salvar rascunho</button><button class="btn light" id="notify">Ativar aviso</button></div>
+      <div class="timer" id="timer">Defina um horário para a próxima revisão. O aviso serve para lembrar você de voltar à Central; nenhum envio é feito automaticamente.</div>
+      <div class="status" id="status">Carregando contatos…</div>
+      <div class="sticky-note">A mensagem é editável em todos os lotes. O botão do WhatsApp apenas abre a conversa com o texto preparado; o envio permanece sob sua confirmação no WhatsApp.</div>
+    </section>
+    <section class="card">
+      <h2>Lote atual</h2>
+      <div class="stats"><div class="stat"><b id="remaining">—</b><span>restantes</span></div><div class="stat"><b id="done">0</b><span>trabalhados</span></div><div class="stat"><b id="batchCount">0</b><span>neste lote</span></div></div>
+      <div class="progress"><i id="bar"></i></div>
+      <div id="nextCard" class="empty">Clique em “Preparar lote” para começar.</div>
+      <div class="actions" id="contactActions" style="display:none">
+        <button class="btn green" id="openWa">Abrir WhatsApp</button>
+        <button class="btn" id="sentNext">Enviado + próximo</button>
+        <button class="btn light" id="skip">Pular</button>
+        <button class="btn danger" id="noContact">Não contatar</button>
+      </div>
+    </section>
+  </main>
+  <section class="card" style="margin-top:16px">
+    <h2>Contatos do lote</h2>
+    <input id="search" class="search" type="search" placeholder="Buscar nome ou número">
+    <div id="batchList" class="mini-list"><div class="empty">Nenhum lote preparado.</div></div>
+  </section>
+</div>
+<script>
+const REST_BASE='https://wsqcjbbaqxsjvxvvlgxv.supabase.co/rest/v1';
+const API_KEY='sb_publishable_81ikpTrCLUMeJFlJjn_x1w_3p4DGrBj';
+const DRAFT_KEY='samuel_batch_message_v2', BATCH_KEY='samuel_current_batch_v2', DNC_KEY='samuel_dnc_v1', SKIP_KEY='samuel_skip_v1';
+let contacts=[], cloudSent=new Set(), batch=[], cursor=0, dnc=new Set(JSON.parse(localStorage.getItem(DNC_KEY)||'[]')), skipped=new Set(JSON.parse(localStorage.getItem(SKIP_KEY)||'[]'));
+const $=id=>document.getElementById(id);
+function headers(extra={}){return Object.assign({'apikey':API_KEY,'Content-Type':'application/json'},extra)}
+function normalize(v){return String(v||'').replace(/\D/g,'')}
+function waNumber(v){let n=normalize(v);if((n.length===10||n.length===11)&&!n.startsWith('55'))n='55'+n;return n}
+function setStatus(t,k=''){$('status').textContent=t;$('status').className='status '+k}
+async function fetchSent(){let out=[];for(let s=0;;s+=1000){let r=await fetch(REST_BASE+'/whatsapp_contact_status?select=contact_key&is_sent=eq.true&order=contact_key',{headers:headers({'Range':s+'-'+(s+999)})});if(!r.ok)throw Error('status '+r.status);let a=await r.json();out.push(...a);if(a.length<1000)break}cloudSent=new Set(out.map(x=>String(x.contact_key)))}
+async function markSent(key){cloudSent.add(String(key));render();let now=new Date().toISOString();let r=await fetch(REST_BASE+'/whatsapp_contact_status',{method:'POST',headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify([{contact_key:String(key),is_sent:true,sent_at:now,updated_at:now}])});if(!r.ok)throw Error('save '+r.status)}
+async function loadContacts(){let r=await fetch('index.html?source=2',{cache:'no-store'});let text=await r.text();let doc=new DOMParser().parseFromString(text,'text/html');contacts=[...doc.querySelectorAll('.card[data-wa]')].map((c,i)=>{let name=(c.querySelector('.name')?.textContent||'Contato '+(i+1)).trim();let num=(c.querySelector('.number')?.textContent||c.dataset.wa||'').trim();return {key:String(c.dataset.wa||normalize(num)||i),name,phone:num}});await fetchSent();restoreBatch();render();$('cloudPill').textContent='✓ Sincronizado';setStatus('Central pronta. '+contacts.length.toLocaleString('pt-BR')+' contatos carregados.','ok')}
+function eligible(c){return !cloudSent.has(c.key)&&!dnc.has(c.key)}
+function saveBatch(){localStorage.setItem(BATCH_KEY,JSON.stringify({keys:batch.map(c=>c.key),cursor,size:$('batchSize').value,nextTime:$('nextTime').value}))}
+function restoreBatch(){try{let s=JSON.parse(localStorage.getItem(BATCH_KEY)||'null');if(s){batch=s.keys.map(k=>contacts.find(c=>c.key===k)).filter(Boolean);cursor=Math.min(s.cursor||0,batch.length);$('batchSize').value=s.size||'10';$('nextTime').value=s.nextTime||''}}catch(e){}}
+function prepareBatch(){let n=Number($('batchSize').value);let pool=contacts.filter(eligible);batch=pool.slice(0,n);cursor=0;saveBatch();render();setStatus(batch.length?'Lote preparado. Revise a mensagem antes de abrir o primeiro contato.':'Não há contatos elegíveis pendentes.','ok')}
+function current(){while(cursor<batch.length&&(cloudSent.has(batch[cursor].key)||dnc.has(batch[cursor].key)||skipped.has(batch[cursor].key)))cursor++;return batch[cursor]||null}
+function render(){let eligibleCount=contacts.filter(eligible).length;$('remaining').textContent=eligibleCount.toLocaleString('pt-BR');$('done').textContent=cloudSent.size.toLocaleString('pt-BR');$('batchCount').textContent=batch.length;let c=current();$('bar').style.width=(batch.length?Math.min(100,(cursor/batch.length)*100):0)+'%';if(c){$('nextCard').className='next';$('nextCard').innerHTML='<div class="name">'+escapeHtml(c.name)+'</div><div class="phone">'+escapeHtml(c.phone)+'</div>';$('contactActions').style.display='flex'}else{$('nextCard').className='empty';$('nextCard').textContent=batch.length?'Lote concluído. Prepare o próximo quando estiver pronta.':'Clique em “Preparar lote” para começar.';$('contactActions').style.display='none'}renderList();saveBatch()}
+function renderList(){let q=($('search').value||'').toLowerCase();let rows=batch.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(q)).map((c,i)=>'<div class="mini"><span>'+escapeHtml(c.name)+'<br><small>'+escapeHtml(c.phone)+'</small></span><span class="'+(cloudSent.has(c.key)?'sent':'')+'">'+(cloudSent.has(c.key)?'Enviado':dnc.has(c.key)?'Não contatar':skipped.has(c.key)?'Pulado':'Pendente')+'</span></div>').join('');$('batchList').innerHTML=rows||'<div class="empty">Nenhum contato neste lote.</div>'}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function openCurrent(){let c=current(),msg=$('message').value.trim();if(!c)return;if(!msg){setStatus('Escreva a mensagem deste lote antes de abrir o WhatsApp.','err');$('message').focus();return}let url='https://wa.me/'+waNumber(c.phone)+'?text='+encodeURIComponent(msg);window.open(url,'_blank','noopener');setStatus('Conversa aberta. Confirme o envio no WhatsApp e depois marque “Enviado + próximo”.')}
+async function sentNext(){let c=current();if(!c)return;try{await markSent(c.key);cursor++;saveBatch();render();setStatus('✓ Contato salvo para toda a equipe.','ok')}catch(e){setStatus('Não foi possível sincronizar agora. Tente novamente antes de avançar.','err')}}
+function skip(){let c=current();if(!c)return;skipped.add(c.key);localStorage.setItem(SKIP_KEY,JSON.stringify([...skipped]));cursor++;render()}
+function noContact(){let c=current();if(!c)return;dnc.add(c.key);localStorage.setItem(DNC_KEY,JSON.stringify([...dnc]));cursor++;render();setStatus('Contato retirado desta operação neste aparelho.','ok')}
+function saveDraft(){localStorage.setItem(DRAFT_KEY,$('message').value);saveBatch();setStatus('Rascunho salvo neste aparelho.','ok')}
+function updateTimer(){let t=$('nextTime').value;if(!t){$('timer').textContent='Defina um horário para a próxima revisão. O aviso serve para lembrar você de voltar à Central; nenhum envio é feito automaticamente.';return}let [h,m]=t.split(':').map(Number),now=new Date(),target=new Date();target.setHours(h,m,0,0);if(target<=now)target.setDate(target.getDate()+1);let d=target-now,mins=Math.max(0,Math.floor(d/60000));$('timer').innerHTML='<strong>Próxima revisão:</strong> '+t+' · faltam '+Math.floor(mins/60)+'h '+(mins%60)+'min.';if(d<=10*60000&&d>9*60000&&Notification.permission==='granted')new Notification('Central Samuel',{body:'Faltam cerca de 10 minutos para a próxima revisão de lote.'})}
+$('prepare').onclick=prepareBatch;$('saveDraft').onclick=saveDraft;$('openWa').onclick=openCurrent;$('sentNext').onclick=sentNext;$('skip').onclick=skip;$('noContact').onclick=noContact;$('search').oninput=renderList;$('nextTime').onchange=()=>{saveBatch();updateTimer()};$('notify').onclick=async()=>{if(!('Notification'in window)){setStatus('Este navegador não oferece notificações.','err');return}let p=await Notification.requestPermission();setStatus(p==='granted'?'Avisos do navegador ativados. Mantenha a Central aberta para recebê-los.':'Permissão de notificação não concedida.',p==='granted'?'ok':'err')};
+$('message').value=localStorage.getItem(DRAFT_KEY)||'';setInterval(updateTimer,30000);updateTimer();loadContacts().catch(e=>{console.error(e);$('cloudPill').textContent='Sem conexão';setStatus('Não foi possível carregar a Central. Atualize a página.','err')});
+</script>
+</body></html>
