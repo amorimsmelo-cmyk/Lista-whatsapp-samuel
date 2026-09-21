@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Central Samuel — Painel de Operação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f1b2d;--muted:#5b6778;--line:#e1e6ee;--bg:#f3f5f9;--card:#fff;--teal:#128c7e;--teal-2:#e6f4f1;--red:#b3261e;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Archivo',Arial,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:1080px;margin:auto;padding:22px 18px 60px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:20px}
+.brand{font-weight:800;letter-spacing:.14em;font-size:13px;color:var(--teal)}
+h1{margin:2px 0 0;font-size:30px;font-weight:800;letter-spacing:-.01em}
+.who{font-size:13px;color:var(--muted);text-align:right}
+.who button{margin-left:8px}
+button,.btn{font-family:inherit;font-size:14px;font-weight:600;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 14px;cursor:pointer}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+button:disabled{opacity:.55;cursor:default}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi .label{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+.kpi .value{font-family:var(--mono);font-size:38px;font-weight:600;margin-top:6px;line-height:1}
+.kpi.hl{background:var(--ink);color:#fff;border-color:var(--ink)}.kpi.hl .label{color:#9fb3c8}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.seg button{border:0;border-radius:0;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--teal);color:#fff}
+.custom{display:none;gap:6px;align-items:center;flex-wrap:wrap}
+.custom.on{display:flex}
+input[type=date],input[type=email],input[type=password]{font-family:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff}
+.spacer{flex:1}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.panel h2{font-size:12px;letter-spacing:.1em;font-weight:800;margin:0;padding:14px 16px;border-bottom:1px solid var(--line);color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{font-size:11px;letter-spacing:.08em;text-align:left;color:var(--muted);padding:10px 16px;background:#fafbfd;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);font-weight:600}
+tr.op{cursor:pointer}tr.op:hover td{background:var(--teal-2)}tr.op.sel td{background:var(--teal-2)}
+tr.op td:first-child{font-weight:700}
+tr.total td{font-weight:800;background:#fafbfd}
+.muted{color:var(--muted)}
+.detail{margin-top:16px}
+.detail .empty,.empty{padding:22px 16px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.status{font-size:13px;color:var(--muted);min-height:18px;margin:6px 0 14px}.status.err{color:var(--red)}
+.login{max-width:380px;margin:9vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px}
+.login h1{font-size:24px}.login p{color:var(--muted);font-size:14px;line-height:1.45}
+.login label{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+.login input{width:100%}
+.login .row{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.login .row button{flex:1}
+dialog{border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 28px)}
+dialog::backdrop{background:rgba(15,27,45,.6)}
+.dlg{padding:20px}
+.dlg textarea{width:100%;min-height:230px;font-family:var(--mono);font-size:14px;border:1px solid var(--line);border-radius:10px;padding:12px;resize:vertical}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.hidden{display:none!important}
+@media(max-width:700px){.kpis{grid-template-columns:1fr}.kpi .value{font-size:32px}h1{font-size:24px}.who{text-align:left}td,th{padding:11px 12px}}
+</style>
+</head>
+<body>
+
+<section id="loginView" class="login hidden">
+  <div class="brand">CENTRAL SAMUEL</div>
+  <h1>Painel de Operação</h1>
+  <p>Acesso restrito à administração.</p>
+  <label for="email">E-MAIL</label>
+  <input id="email" type="email" autocomplete="username" value="amorimsmelo@gmail.com" />
+  <label for="pass">SENHA</label>
+  <input id="pass" type="password" autocomplete="current-password" />
+  <div class="row">
+    <button class="primary" id="btnLogin" type="button">Entrar</button>
+    <button id="btnMagic" type="button">Receber link por e-mail</button>
+  </div>
+  <div class="status" id="loginStatus"></div>
+</section>
+
+<div class="wrap hidden" id="appView">
+  <header>
+    <div>
+      <div class="brand">CENTRAL SAMUEL</div>
+      <h1>Painel de Operação</h1>
+    </div>
+    <div class="who"><span id="whoEmail"></span><button id="btnLogout" type="button">Sair</button></div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label">CONTATOS JÁ MARCADOS</div><div class="value" id="kMarked">—</div></div>
+    <div class="kpi hl"><div class="label">CONTATOS TRABALHADOS HOJE</div><div class="value" id="kToday">—</div></div>
+    <div class="kpi"><div class="label">OPERADORES ATIVOS</div><div class="value" id="kOps">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="seg" id="seg">
+      <button data-p="today" class="on" type="button">Hoje</button>
+      <button data-p="yesterday" type="button">Ontem</button>
+      <button data-p="7d" type="button">7 dias</button>
+      <button data-p="custom" type="button">Período</button>
+    </div>
+    <div class="custom" id="custom">
+      <input type="date" id="dFrom" aria-label="De" /> <span class="muted">até</span> <input type="date" id="dTo" aria-label="Até" />
+      <button type="button" id="btnApply">Aplicar</button>
+    </div>
+    <div class="spacer"></div>
+    <button type="button" id="btnRefresh">Atualizar</button>
+    <button type="button" class="teal" id="btnReport">GERAR RELATÓRIO</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="panel">
+    <h2 id="tblTitle">PRODUÇÃO POR OPERADOR</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>OPERADOR</th><th id="thPeriod">CONTATOS TRABALHADOS HOJE</th><th>TOTAL REGISTRADO</th><th>ÚLTIMA ATIVIDADE</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="4" class="empty">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <p class="note">"Contato trabalhado" = o operador tocou em <b>Abrir WhatsApp</b>. A página não consegue confirmar se a mensagem foi de fato enviada ou entregue. Toque em um operador para ver o histórico.</p>
+
+  <div class="panel detail hidden" id="detail">
+    <h2 id="detailTitle">HISTÓRICO</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>HORÁRIO</th><th>CONTATO TRABALHADO</th><th>TELEFONE</th></tr></thead>
+        <tbody id="dbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg"><div class="dlg">
+  <textarea id="reportText" readonly></textarea>
+  <div class="row"><button type="button" id="btnClose">Fechar</button><button type="button" class="teal" id="btnCopy">Copiar</button></div>
+</div></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL='https://wsqcjbbaqxsjvxvvlgxv.supabase.co';
+const SUPABASE_KEY='sb_publishable_81ikpTrCLUMeJFlJjn_x1w_3p4DGrBj'; // chave pública — os dados são protegidos por RLS
+const TZ='America/Sao_Paulo';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const $=id=>document.getElementById(id);
+const state={period:'today',from:null,to:null,operators:[],activity:[],totals:{},selected:null};
+
+// ---------- datas no fuso de São Paulo (sem horário de verão desde 2019: -03:00) ----------
+function ymdSP(d){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d)}
+function startOfSP(ymd){return new Date(ymd+'T00:00:00-03:00')}
+function addDays(ymd,n){const d=startOfSP(ymd);d.setUTCDate(d.getUTCDate()+n);return ymdSP(d)}
+function brDate(ymd){const [y,m,d]=ymd.split('-');return `${d}/${m}/${y}`}
+function hhmm(iso){return new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}).format(new Date(iso))}
+function dayhhmm(iso){return new Intl.DateTimeFormat('pt-BR',{timeZone:TZ,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(iso))}
+function range(){
+  const today=ymdSP(new Date());
+  if(state.period==='today')return{from:today,to:today};
+  if(state.period==='yesterday'){const y=addDays(today,-1);return{from:y,to:y}}
+  if(state.period==='7d')return{from:addDays(today,-6),to:today};
+  return{from:state.from||today,to:state.to||today};
+}
+function rangeLabel(r){return r.from===r.to?brDate(r.from):`${brDate(r.from)} a ${brDate(r.to)}`}
+function periodHeader(){return {today:'CONTATOS TRABALHADOS HOJE',yesterday:'CONTATOS TRABALHADOS ONTEM','7d':'TRABALHADOS — 7 DIAS',custom:'TRABALHADOS NO PERÍODO'}[state.period]}
+function setStatus(m,err){const e=$('status');e.textContent=m||'';e.className='status'+(err?' err':'')}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmtPhone(p){const d=String(p||'').replace(/\D/g,'');const n=d.startsWith('55')&&d.length>11?d.slice(2):d;if(n.length===11)return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;if(n.length===10)return `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6)}`;return p||'—'}
+
+// ---------- autenticação ----------
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){showLogin();return}
+  const {data:isAdmin,error}=await sb.rpc('is_whatsapp_admin');
+  if(error||!isAdmin){await sb.auth.signOut();showLogin('Esta conta não tem acesso administrativo.');return}
+  $('whoEmail').textContent=session.user.email||'';
+  $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');
+  await loadAll();
+}
+function showLogin(msg){$('appView').classList.add('hidden');$('loginView').classList.remove('hidden');$('loginStatus').textContent=msg||''}
+$('btnLogin').onclick=async()=>{
+  $('loginStatus').textContent='Entrando…';
+  const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});
+  if(error){$('loginStatus').textContent='Não foi possível entrar: '+(error.message==='Invalid login credentials'?'e-mail ou senha incorretos.':error.message);return}
+  boot();
+};
+$('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('btnLogin').click()});
+$('btnMagic').onclick=async()=>{
+  $('loginStatus').textContent='Enviando…';
+  const {error}=await sb.auth.signInWithOtp({email:$('email').value.trim(),options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+  $('loginStatus').textContent=error?'Não foi possível enviar: '+error.message:'Link enviado. Abra o e-mail neste mesmo aparelho.';
+};
+$('btnLogout').onclick=async()=>{await sb.auth.signOut();showLogin()};
+sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_IN'&&$('appView').classList.contains('hidden'))boot()});
+
+// ---------- dados ----------
+async function fetchActivity(fromIso,toIso){
+  const out=[];const step=1000;
+  for(let s=0;;s+=step){
+    const {data,error}=await sb.from('whatsapp_activity')
+      .select('id,operator_id,contact_key,contact_name,contact_phone,created_at')
+      .gte('created_at',fromIso).lt('created_at',toIso)
+      .order('created_at',{ascending:false}).range(s,s+step-1);
+    if(error)throw error;out.push(...data);if(data.length<step)break;
+  }
+  return out;
+}
+async function loadAll(){
+  setStatus('Atualizando…');
+  try{
+    const r=range();
+    const fromIso=startOfSP(r.from).toISOString(),toIso=startOfSP(addDays(r.to,1)).toISOString();
+    const today=ymdSP(new Date());
+    const [ops,marked,todayCount,act]=await Promise.all([
+      sb.from('whatsapp_operators').select('id,display_name,phone_normalized,active,role').eq('role','operator').order('display_name'),
+      sb.from('whatsapp_contact_status').select('contact_key',{count:'exact',head:true}).eq('is_sent',true),
+      sb.from('whatsapp_activity').select('id',{count:'exact',head:true}).gte('created_at',startOfSP(today).toISOString()).lt('created_at',startOfSP(addDays(today,1)).toISOString()),
+      fetchActivity(fromIso,toIso)
+    ]);
+    if(ops.error)throw ops.error;if(marked.error)throw marked.error;if(todayCount.error)throw todayCount.error;
+    state.operators=ops.data;state.activity=act;
+    const totals=await Promise.all(ops.data.map(o=>sb.from('whatsapp_activity').select('created_at').eq('operator_id',o.id).order('created_at',{ascending:false}).limit(1).then(async last=>{
+      const c=await sb.from('whatsapp_activity').select('id',{count:'exact',head:true}).eq('operator_id',o.id);
+      return [o.id,{total:c.count||0,last:last.data&&last.data[0]?last.data[0].created_at:null}];
+    })));
+    state.totals=Object.fromEntries(totals);
+    $('kMarked').textContent=(marked.count||0).toLocaleString('pt-BR');
+    $('kToday').textContent=(todayCount.count||0).toLocaleString('pt-BR');
+    $('kOps').textContent=ops.data.filter(o=>o.active).length;
+    render();
+    setStatus('Atualizado às '+hhmm(new Date().toISOString())+' · '+rangeLabel(r));
+  }catch(e){console.error(e);setStatus('Erro ao carregar dados: '+(e.message||e),true)}
+}
+function countsByOp(){const m={};state.activity.forEach(a=>{m[a.operator_id]=(m[a.operator_id]||0)+1});return m}
+function render(){
+  $('thPeriod').textContent=periodHeader();
+  const c=countsByOp();
+  const rows=[...state.operators].sort((a,b)=>(c[b.id]||0)-(c[a.id]||0)||a.display_name.localeCompare(b.display_name));
+  let sum=0;
+  $('tbody').innerHTML=rows.length?rows.map(o=>{
+    const n=c[o.id]||0;sum+=n;const t=state.totals[o.id]||{};
+    return `<tr class="op${state.selected===o.id?' sel':''}" data-id="${o.id}"><td>${esc(o.display_name)} <span class="muted">· ${esc(String(o.phone_normalized||'').slice(-4))}</span>${o.active?'':' <span class="muted">(inativo)</span>'}</td><td class="num">${n}</td><td class="num">${t.total??0}</td><td class="num">${t.last?(ymdSP(new Date(t.last))===ymdSP(new Date())?hhmm(t.last):dayhhmm(t.last)):'—'}</td></tr>`;
+  }).join('')+`<tr class="total"><td>Total</td><td class="num">${sum}</td><td class="num">${Object.values(state.totals).reduce((s,t)=>s+(t.total||0),0)}</td><td></td></tr>`
+  :'<tr><td colspan="4" class="empty">Nenhum operador cadastrado.</td></tr>';
+  document.querySelectorAll('tr.op').forEach(tr=>tr.onclick=()=>{state.selected=state.selected===tr.dataset.id?null:tr.dataset.id;render()});
+  renderDetail();
+}
+function renderDetail(){
+  const box=$('detail');
+  if(!state.selected){box.classList.add('hidden');return}
+  const op=state.operators.find(o=>o.id===state.selected);const r=range();
+  const list=state.activity.filter(a=>a.operator_id===state.selected);
+  $('detailTitle').textContent=`HISTÓRICO — ${(op?op.display_name:'').toUpperCase()} · ${rangeLabel(r)} · ${list.length} CONTATO(S)`;
+  const multi=r.from!==r.to;
+  $('dbody').innerHTML=list.length?list.map(a=>`<tr><td class="num">${multi?dayhhmm(a.created_at):hhmm(a.created_at)}</td><td>${esc(a.contact_name||'—')}</td><td class="num">${esc(fmtPhone(a.contact_phone||a.contact_key))}</td></tr>`).join('')
+    :'<tr><td colspan="3" class="empty">Nenhum contato trabalhado neste período.</td></tr>';
+  box.classList.remove('hidden');
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ---------- filtros ----------
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#seg button').forEach(x=>x.classList.toggle('on',x===b));
+  state.period=b.dataset.p;
+  $('custom').classList.toggle('on',state.period==='custom');
+  if(state.period==='custom'){const t=ymdSP(new Date());if(!$('dFrom').value)$('dFrom').value=addDays(t,-6);if(!$('dTo').value)$('dTo').value=t;return}
+  loadAll();
+});
+$('btnApply').onclick=()=>{let f=$('dFrom').value,t=$('dTo').value;if(!f||!t){setStatus('Escolha as duas datas.',true);return}if(f>t)[f,t]=[t,f];state.from=f;state.to=t;loadAll()};
+$('btnRefresh').onclick=loadAll;
+
+// ---------- relatório ----------
+$('btnReport').onclick=()=>{
+  const r=range();const c=countsByOp();
+  const ops=[...state.operators].sort((a,b)=>(c[b.id]||0)-(c[a.id]||0));
+  const total=ops.reduce((s,o)=>s+(c[o.id]||0),0);
+  const lines=['RELATÓRIO CENTRAL SAMUEL',rangeLabel(r),'',
+    ...ops.map(o=>`${o.display_name}: ${c[o.id]||0} contatos trabalhados`),'',
+    `Total: ${total} contatos trabalhados`,'',
+    '(contato trabalhado = WhatsApp aberto pela Central)'];
+  $('reportText').value=lines.join('\n');$('dlg').showModal();
+};
+$('btnClose').onclick=()=>$('dlg').close();
+$('btnCopy').onclick=async()=>{const t=$('reportText');try{await navigator.clipboard.writeText(t.value)}catch(e){t.select();document.execCommand('copy')}$('btnCopy').textContent='✓ Copiado';setTimeout(()=>$('btnCopy').textContent='Copiar',1800)};
+
+setInterval(()=>{if(!$('appView').classList.contains('hidden')&&!$('dlg').open)loadAll()},30000);
+boot();
+</script>
+</body>
+</html>
