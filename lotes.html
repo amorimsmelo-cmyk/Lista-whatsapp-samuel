@@ -12,13 +12,13 @@
 header{display:flex;justify-content:space-between;gap:14px;align-items:flex-end;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:18px;flex-wrap:wrap}
 h1{margin:3px 0 0;font-size:28px}.brand{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--teal)}
 button,.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer;text-decoration:none;font-size:14px}.primary{background:var(--teal);border-color:var(--teal);color:#fff}.dark{background:var(--ink);border-color:var(--ink);color:#fff}
-.login{max-width:390px;margin:9vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px}.login input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;margin:6px 0 12px;font-size:15px}.login label{font-size:12px;font-weight:800;color:var(--muted)}
+.login{max-width:390px;margin:9vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px}.login input{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;margin:6px 0 12px;font-size:15px}.login label{font-size:12px;font-weight:800;color:var(--muted)}.loginActions{display:flex;gap:8px;flex-wrap:wrap}.loginActions button{flex:1}.loginHelp{font-size:12px;color:var(--muted);line-height:1.45;margin:10px 0 0}
 .status{font-size:13px;color:var(--muted);margin:10px 0}.status.err{color:var(--red)}
 .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.spacer{flex:1}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.kpi b{display:block;font-size:28px;margin-top:4px}.kpi span{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.07em}
 .batch{background:#fff;border:1px solid var(--line);border-radius:14px;margin:10px 0;overflow:hidden}.batchHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 15px;border-bottom:1px solid var(--line)}.batchHead h2{font-size:17px;margin:0}.batchHead small{color:var(--muted)}.batchActions{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}
 .preview{padding:10px 15px;color:var(--muted);font-size:13px;line-height:1.55}.notice{background:#fff8df;border:1px solid #eadb9b;border-radius:10px;padding:11px 13px;font-size:13px;margin:10px 0 16px;line-height:1.45}
 .mode{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.mode button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-@media(max-width:700px){.summary{grid-template-columns:1fr}.batchActions{width:100%;margin-left:0}.batchActions>*{flex:1;text-align:center}h1{font-size:23px}}
+@media(max-width:700px){.summary{grid-template-columns:1fr}.batchActions{width:100%;margin-left:0}.batchActions>*{flex:1;text-align:center}h1{font-size:23px}.loginActions{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -27,7 +27,11 @@ button,.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border
   <p>Entre para abrir os lotes de contatos.</p>
   <label for="email">E-MAIL</label><input id="email" type="email" autocomplete="username" value="amorimsmelo@gmail.com" />
   <label for="pass">SENHA</label><input id="pass" type="password" autocomplete="current-password" />
-  <button class="dark" id="btnLogin" type="button">Entrar</button>
+  <div class="loginActions">
+    <button class="dark" id="btnLogin" type="button">Entrar</button>
+    <button id="btnMagic" type="button">Receber link por e-mail</button>
+  </div>
+  <p class="loginHelp">Esqueceu a senha? Toque em <b>Receber link por e-mail</b>. O acesso continua restrito à conta administrativa.</p>
   <div class="status" id="loginStatus"></div>
 </section>
 <div class="wrap hidden" id="appView">
@@ -52,8 +56,11 @@ function digits(s){return String(s||'').replace(/\D/g,'')}
 function csvCell(v){v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 async function boot(){const {data:{session}}=await sb.auth.getSession();if(!session){showLogin();return}const {data:isAdmin,error}=await sb.rpc('is_whatsapp_admin');if(error||!isAdmin){await sb.auth.signOut();showLogin('Esta conta não tem acesso administrativo.');return}$('loginView').classList.add('hidden');$('appView').classList.remove('hidden');await loadAll()}
 function showLogin(m=''){$('appView').classList.add('hidden');$('loginView').classList.remove('hidden');$('loginStatus').textContent=m}
-$('btnLogin').onclick=async()=>{$('loginStatus').textContent='Entrando…';const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});if(error){$('loginStatus').textContent='Não foi possível entrar: '+error.message;return}boot()};
-$('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('btnLogin').click()});$('btnLogout').onclick=async()=>{await sb.auth.signOut();showLogin()};
+$('btnLogin').onclick=async()=>{$('loginStatus').textContent='Entrando…';const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});if(error){$('loginStatus').textContent='Não foi possível entrar: '+(error.message==='Invalid login credentials'?'e-mail ou senha incorretos.':error.message);return}boot()};
+$('pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('btnLogin').click()});
+$('btnMagic').onclick=async()=>{const email=$('email').value.trim();if(!email){$('loginStatus').textContent='Digite seu e-mail administrativo.';return}$('loginStatus').textContent='Enviando link de acesso…';const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});$('loginStatus').textContent=error?'Não foi possível enviar: '+error.message:'Link enviado. Abra o e-mail neste mesmo aparelho e toque no link para entrar.'};
+$('btnLogout').onclick=async()=>{await sb.auth.signOut();showLogin()};
+sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_IN')setTimeout(boot,0)});
 async function loadContacts(){const r=await fetch('index.html?source=lotes&v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('Não foi possível carregar a lista original.');const html=await r.text();const doc=new DOMParser().parseFromString(html,'text/html');const cards=[...doc.querySelectorAll('.card[data-wa]')];const seen=new Set();return cards.map(c=>{const key=String(c.dataset.wa||'').trim();const name=(c.querySelector('.name')?.textContent||'').trim();const number=(c.querySelector('.number')?.textContent||key).trim();return{key,name,phone:digits(number)||digits(key)}}).filter(x=>x.phone&&!seen.has(x.phone)&&(seen.add(x.phone),true))}
 async function loadSent(){const out=[];for(let start=0;;start+=1000){const r=await fetch(`${REST_BASE}/whatsapp_contact_status?select=contact_key&is_sent=eq.true&order=contact_key`,{headers:{apikey:SUPABASE_KEY,Range:`${start}-${start+999}`}});if(!r.ok)break;const rows=await r.json();out.push(...rows);if(rows.length<1000)break}return new Set(out.map(x=>String(x.contact_key)))}
 async function loadAll(){try{setStatus('Carregando contatos e status…');[allContacts,sent]=await Promise.all([loadContacts(),loadSent()]);render();setStatus('Lotes prontos.')}catch(e){console.error(e);setStatus(e.message||'Erro ao carregar.',true)}}
